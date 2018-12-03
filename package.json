@@ -1,0 +1,21 @@
+{
+  "name": "data-map",
+  "version": "1.0.0",
+  "description": "ORM tool for node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ORM",
+    "Node"
+  ],
+  "author": "Sam Huber & Greg Frady",
+  "license": "ISC",
+  "bin": {
+    "outside": "bin/outside"
+  },
+  "dependencies": {
+    "minimist": "^1.2.0"
+  }
+}
