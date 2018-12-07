@@ -1,35 +1,25 @@
 const minimist = require('minimist');
 
 module.exports = () => {
-        const args = minimist(process.argv.slice(2));
-        console.log(args);
+    const args = minimist(process.argv.slice(2));
+    console.log(args);
+    var cmd = args._[0] || 'help';
 
-        let cmd = args._[0] || 'help';
 
+    if (args.create || args.c) {
+        cmd = 'c';
+    }
 
-        if(args.version || args.v){
-            cmd = 'version';
-        }
-
-        if(args.help || args.h){
-            cmd = 'help';
-        }
-
-        switch(cmd){
-            case 'today': {
-                require('./cmds/today')(args);
+    switch (cmd) {
+        case 'c':
+            {
+                require('./cmds/create_mapping')(args);
                 break;
             }
-            case 'version': {
-                require('./cmds/version')(args);
-                break;
-            }
-            case 'help': {
-                require('./cmds/help')(args);
-            }
-            default:{
+        default:
+            {
                 console.log(`${cmd} not recognized`);
                 break;
             }
-        }
-  }
+    }
+}
