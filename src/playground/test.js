@@ -1,2 +1,3 @@
-var {test} = require('../common/dbconnection/mysql');
-test();
+var {insertIntosimple} = require('../../DataModels/simple');
+
+insertIntosimple([20]);
