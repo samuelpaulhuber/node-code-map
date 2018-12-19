@@ -1,26 +1,34 @@
+var myql = require('mysql');
+var con = mysql.createConnection({
+	host: "localhost",
+	username: "undefined",
+	password: ""
+});
 
-            var mysql = require('mysql');
+modules.exports = {
+	insertIntosimple: (values) => { 
+		let sql = ' INSERT INTO simple (id) VALUES ('+values.join(',')+')';
+		con.connect(function(err) {
+			if(err) throw err;
 
-            var con = mysql.createConnection({
-                host: "localhost",
-                user: "root",
-                database : 'test',
-                password: ""
-              });
+			console.log("Connected!");
+			con.query(sql, function (err, result) {
+				if(err)throw err;
+				console.log("Result: " + result);
+			});
+		});
+	},
+	updatesimple: (data) => {
+		let sql = ' UPDATE simple SET '+
+		'WHERE id = ' + data.id;
+		con.connect(function(err) {
+			if(err) throw err;
 
-            module.exports = {
-
-            insertIntosimple: (values) => { 
- let sql = ' INSERT INTO simple (id) VALUES ('+values.join(',')+')';
-
-           con.connect(function(err) {
-            if (err) throw err;
-            console.log("Connected!");
-            con.query(sql, function (err, result) {
-              if (err) throw err;
-              console.log("Result: " + result);
-            });
-          });
-            },
-
+			console.log("Connected!");
+			con.query(sql, function (err, result) {
+				if(err)throw err;
+				console.log("Result: " + result);
+			});
+		});
+	},
 };
