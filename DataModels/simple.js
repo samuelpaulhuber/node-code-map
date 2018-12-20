@@ -6,8 +6,8 @@ var con = mysql.createConnection({
 });
 
 modules.exports = {
-	insertIntosimple: (values) => { 
-		let sql = ' INSERT INTO simple (test,tes2) VALUES ('+values.join(',')+')';
+	insertIntoSimple: (values) => { 
+		let sql = ' INSERT INTO Simple (test,tes2) VALUES ('+values.join(',')+')';
 		con.connect(function(err) {
 			if(err) throw err;
 
@@ -18,11 +18,11 @@ modules.exports = {
 			});
 		});
 	},
-	updatesimple: (data) => {
-		let sql = ' UPDATE simple SET '+
+	updateSimple: (data) => {
+		let sql = ' UPDATE Simple SET '+
 		'test= '+"'"+data.test+"'"+','+
 		'tes2= '+data.tes2+
-		'WHERE id = ' + data.id;
+		' WHERE id = ' + data.id;
 		con.connect(function(err) {
 			if(err) throw err;
 
@@ -33,8 +33,8 @@ modules.exports = {
 			});
 		});
 	},
-	selectAllsimple: () => {
-		let sql = 'SELECT * FROM simple';
+	selectAllSimple: () => {
+		let sql = 'SELECT * FROM Simple';
 		con.connect(function(err) {
 			if(err) throw err;
 
@@ -45,8 +45,8 @@ modules.exports = {
 			});
 		});
 	},
-	selectByColumnsimple: (column, value) => {
-		let sql = 'SELECT * FROM simple WHERE '+column+' = ' + value;
+	selectByColumnSimple: (column, value) => {
+		let sql = 'SELECT * FROM Simple WHERE '+column+' = ' + value;
 		con.connect(function(err) {
 			if(err) throw err;
 
@@ -57,8 +57,8 @@ modules.exports = {
 			});
 		});
 	},
-	deleteByColumnValuesimple: (key, value) => {
-		let sql = 'DELETE FROM simple WHERE '+key+'='+value;
+	deleteByColumnValueSimple: (key, value) => {
+		let sql = 'DELETE FROM Simple WHERE '+key+'='+value;
 		con.connect(function(err) {
 			if(err) throw err;
 

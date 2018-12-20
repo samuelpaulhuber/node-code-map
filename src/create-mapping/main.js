@@ -51,11 +51,13 @@ function generateInsertFile(folder, data, conData) {
                 columns.push(elm.column_name);
         });
 
-        file += generateInsert(table, columns);
-        file += generateUpdate(table);
-        file += generateSelect(table);
-        file += generateSearchByColumn(table);
-        file += generateDeleteByColumn(table);
+        var tableName = table[0].table_name.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+
+        file += generateInsert(columns, tableName);
+        file += generateUpdate(table, tableName);
+        file += generateSelect(tableName);
+        file += generateSearchByColumn(tableName);
+        file += generateDeleteByColumn(tableName);
         file += '};';
 
         if (!fs.existsSync(folder))
@@ -99,10 +101,10 @@ function splitConnectionInfo(conString) {
     });
 }
 
-function generateInsert(table, columns) {
+function generateInsert(columns, tableName) {
     console.log('turkey', columns)
-    return '\tinsertInto' + table[0].table_name + ': (values) => { \n' +
-        '\t\tlet sql = \' INSERT INTO ' + table[0].table_name + ' (' + columns.join(',') + ') VALUES (\'+values.join(\',\')+\')\';\n' +
+    return '\tinsertInto' + tableName + ': (values) => { \n' +
+        '\t\tlet sql = \' INSERT INTO ' + tableName + ' (' + columns.join(',') + ') VALUES (\'+values.join(\',\')+\')\';\n' +
         '\t\tcon.connect(function(err) {\n' +
         '\t\t\tif(err) throw err;\n\n' +
         '\t\t\tconsole.log("Connected!");\n' +
@@ -114,9 +116,9 @@ function generateInsert(table, columns) {
         '\t},\n';
 }
 
-function generateSearchByColumn(table) {
-    var returnValue = '\t\selectByColumn' + table[0].table_name + ': (column, value) => {\n' +
-        '\t\tlet sql = \'SELECT * FROM ' + table[0].table_name + ' WHERE \'+column+\' = \' + value;\n';
+function generateSearchByColumn(tableName) {
+    var returnValue = '\t\selectByColumn' + tableName + ': (column, value) => {\n' +
+        '\t\tlet sql = \'SELECT * FROM ' + tableName + ' WHERE \'+column+\' = \' + value;\n';
     returnValue += '\t\tcon.connect(function(err) {\n' +
         '\t\t\tif(err) throw err;\n\n' +
         '\t\t\tconsole.log("Connected!");\n' +
@@ -130,9 +132,9 @@ function generateSearchByColumn(table) {
     return returnValue;
 }
 
-function generateSelect(table) {
-    var returnValue = '\t\selectAll' + table[0].table_name + ': () => {\n' +
-        '\t\tlet sql = \'SELECT * FROM ' + table[0].table_name + '\';\n';
+function generateSelect(tableName) {
+    var returnValue = '\t\selectAll' + tableName + ': () => {\n' +
+        '\t\tlet sql = \'SELECT * FROM ' + tableName + '\';\n';
     returnValue += '\t\tcon.connect(function(err) {\n' +
         '\t\t\tif(err) throw err;\n\n' +
         '\t\t\tconsole.log("Connected!");\n' +
@@ -146,9 +148,9 @@ function generateSelect(table) {
     return returnValue;
 }
 
-function generateDeleteByColumn(table) {
-    var returnValue = '\tdeleteByColumnValue' + table[0].table_name + ': (key, value) => {\n' +
-        '\t\tlet sql = \'DELETE FROM ' + table[0].table_name + ' WHERE \'+key+\'=\'+value;\n';
+function generateDeleteByColumn(tableName) {
+    var returnValue = '\tdeleteByColumnValue' + tableName + ': (key, value) => {\n' +
+        '\t\tlet sql = \'DELETE FROM ' + tableName + ' WHERE \'+key+\'=\'+value;\n';
     returnValue += '\t\tcon.connect(function(err) {\n' +
         '\t\t\tif(err) throw err;\n\n' +
         '\t\t\tconsole.log("Connected!");\n' +
@@ -162,10 +164,10 @@ function generateDeleteByColumn(table) {
     return returnValue;
 }
 
-function generateUpdate(columns) {
+function generateUpdate(columns, tableName) {
     var primaryKeyCol = null;
-    var returnValue = '\tupdate' + columns[0].table_name + ': (data) => {\n' +
-        '\t\tlet sql = \' UPDATE ' + columns[0].table_name + ' SET \'+\n';
+    var returnValue = '\tupdate' + tableName + ': (data) => {\n' +
+        '\t\tlet sql = \' UPDATE ' + tableName + ' SET \'+\n';
 
 
     for (var i = 0; i < columns.length; i++) {
@@ -191,7 +193,7 @@ function generateUpdate(columns) {
         returnValue += pair + '\n';
     }
 
-    returnValue += `\t\t\'WHERE ${primaryKeyCol.column_name} = `;
+    returnValue += `\t\t\' WHERE ${primaryKeyCol.column_name} = `;
     if (primaryKeyCol.numeric_scale === null)
         returnValue += '\'';
 
