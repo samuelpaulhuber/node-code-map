@@ -40,17 +40,22 @@ function generateInsertFile(folder, data, conData) {
         file += "\n";
         file += "var con = mysql.createConnection({\n";
         file += `\thost: "${conData.server}",\n`;
-        file += `\tusername: "${conData.username}",\n`;
+        file += `\tusername: "${conData.user}",\n`;
         file += `\tpassword: "${conData.password}"\n`;
         file += "});\n\n";
         file += "modules.exports = {\n";
 
-        var columns = table.map((elm) => {
-            return elm.column_name;
+        var columns = new Array();
+        table.map((elm) => {
+            if(!elm.column_key)
+                columns.push(elm.column_name);
         });
 
         file += generateInsert(table, columns);
         file += generateUpdate(table);
+        file += generateSelect(table);
+        file += generateSearchByColumn(table);
+        file += generateDeleteByColumn(table);
         file += '};';
 
         if (!fs.existsSync(folder))
@@ -95,6 +100,7 @@ function splitConnectionInfo(conString) {
 }
 
 function generateInsert(table, columns) {
+    console.log('turkey', columns)
     return '\tinsertInto' + table[0].table_name + ': (values) => { \n' +
         '\t\tlet sql = \' INSERT INTO ' + table[0].table_name + ' (' + columns.join(',') + ') VALUES (\'+values.join(\',\')+\')\';\n' +
         '\t\tcon.connect(function(err) {\n' +
@@ -108,6 +114,54 @@ function generateInsert(table, columns) {
         '\t},\n';
 }
 
+function generateSearchByColumn(table) {
+    var returnValue = '\t\selectByColumn' + table[0].table_name + ': (column, value) => {\n' +
+        '\t\tlet sql = \'SELECT * FROM ' + table[0].table_name + ' WHERE \'+column+\' = \' + value;\n';
+    returnValue += '\t\tcon.connect(function(err) {\n' +
+        '\t\t\tif(err) throw err;\n\n' +
+        '\t\t\tconsole.log("Connected!");\n' +
+        '\t\t\tcon.query(sql, function (err, result) {\n' +
+        '\t\t\t\tif(err)throw err;\n' +
+        '\t\t\t\tconsole.log("Result: " + result);\n' +
+        '\t\t\t});\n' +
+        '\t\t});\n' +
+        '\t},\n';
+
+    return returnValue;
+}
+
+function generateSelect(table) {
+    var returnValue = '\t\selectAll' + table[0].table_name + ': () => {\n' +
+        '\t\tlet sql = \'SELECT * FROM ' + table[0].table_name + '\';\n';
+    returnValue += '\t\tcon.connect(function(err) {\n' +
+        '\t\t\tif(err) throw err;\n\n' +
+        '\t\t\tconsole.log("Connected!");\n' +
+        '\t\t\tcon.query(sql, function (err, result) {\n' +
+        '\t\t\t\tif(err)throw err;\n' +
+        '\t\t\t\tconsole.log("Result: " + result);\n' +
+        '\t\t\t});\n' +
+        '\t\t});\n' +
+        '\t},\n';
+
+    return returnValue;
+}
+
+function generateDeleteByColumn(table) {
+    var returnValue = '\tdeleteByColumnValue' + table[0].table_name + ': (key, value) => {\n' +
+        '\t\tlet sql = \'DELETE FROM ' + table[0].table_name + ' WHERE \'+key+\'=\'+value;\n';
+    returnValue += '\t\tcon.connect(function(err) {\n' +
+        '\t\t\tif(err) throw err;\n\n' +
+        '\t\t\tconsole.log("Connected!");\n' +
+        '\t\t\tcon.query(sql, function (err, result) {\n' +
+        '\t\t\t\tif(err)throw err;\n' +
+        '\t\t\t\tconsole.log("Result: " + result);\n' +
+        '\t\t\t});\n' +
+        '\t\t});\n' +
+        '\t},\n';
+
+    return returnValue;
+}
+
 function generateUpdate(columns) {
     var primaryKeyCol = null;
     var returnValue = '\tupdate' + columns[0].table_name + ': (data) => {\n' +
@@ -116,31 +170,25 @@ function generateUpdate(columns) {
 
     for (var i = 0; i < columns.length; i++) {
         var column = columns[i];
-        var pair = `${column.column_name}=`;
+        var pair = `\t\t\'${column.column_name}= \'`;
 
         if (column.column_key === 'PRI') {
             primaryKeyCol = column;
             continue;
         }
 
-        if (i === 0)
-            returnValue += '\t\t\'';
 
         if (column.numeric_scale === null)
-            pair += '\'';
-
-        pair += 'data.${column.column_name}';
-        if (column.numeric_scale === null)
-            pair += '\'';
-
-        returnValue += pair;
+            pair += `+"\'"+data.${column.column_name}+"\'"`;
+        else
+            pair += `+data.${column.column_name}`;
 
         if (i !== columns.length - 1)
-            returnValue += ', ';
+            pair += '+\',\'+';
         else
-            returnValue += '\'+\n';
+            pair += '+';
 
-
+        returnValue += pair + '\n';
     }
 
     returnValue += `\t\t\'WHERE ${primaryKeyCol.column_name} = `;

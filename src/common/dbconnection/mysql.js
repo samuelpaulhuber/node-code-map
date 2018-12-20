@@ -17,8 +17,7 @@ module.exports = {
 
         var sql = `SELECT table_name, column_name, column_default, is_nullable, data_type, character_maximum_length, column_key, numeric_scale
         FROM information_schema.columns
-        where table_schema = '${dbName}'
-        group by table_name`;
+        where table_schema = '${dbName}'`;
 
         return new Promise((resolve, reject) => {
             con.query(sql, function (err, result) {
