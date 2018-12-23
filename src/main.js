@@ -1,5 +1,5 @@
 module.exports = () => {
-    RouteCommand: (argv) => {
+    routeCommand: (argv) => {
         if (argv.create || argv.c) {
             cmd = 'c';
         }
@@ -7,7 +7,10 @@ module.exports = () => {
         switch (cmd) {
             case 'c':
                 {
-                    require('./cmds/create_mapping')(argv);
+                    if(argv.mongoose)
+                        require('./create-mapping/mongoose/main')(argv);
+                    else if(argv.mysql)
+                        require('./create-mapping/mysql/main')(argv);
                     break;
                 }
             default:
