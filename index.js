@@ -1,25 +1,20 @@
-const minimist = require('minimist');
+const {RouteCommand} = require('./src/main')
+const argv = require('yargs') // eslint-disable-line
+    .command('create', 'generate data access files', {
+        alias: 'c',
+        default: false
+    })
+    .option('connection_string', {
+        alias: 'cs',
+        default: false
+    })
+    .option('connection_file', {
+        alias: 'cf',
+        default: false
+    })
+    .argv;
 
 module.exports = () => {
-    const args = minimist(process.argv.slice(2));
-    console.log(args);
-    var cmd = args._[0] || 'help';
-
-
-    if (args.create || args.c) {
-        cmd = 'c';
-    }
-
-    switch (cmd) {
-        case 'c':
-            {
-                require('./cmds/create_mapping')(args);
-                break;
-            }
-        default:
-            {
-                console.log(`${cmd} not recognized`);
-                break;
-            }
-    }
+    console.log(argv);
+    RouteCommand(argv);    
 }

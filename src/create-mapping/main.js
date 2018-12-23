@@ -21,7 +21,7 @@ module.exports = {
                 password: ''
             };
         } else {
-            console.log('Connection string ("-cs"), or connection file ("-cf") required.');
+            console.log('No connection string found.');
             return;
         }
 
