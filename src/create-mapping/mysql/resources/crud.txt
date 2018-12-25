@@ -1,0 +1,14 @@
+var myql = require("mysql");
+var con = mysql.createConnection({
+    host: "{{server}}",
+    username: "{{user}}",
+    password: "{{password}}"
+});
+
+modules.exports = {
+    {{insert}},
+    {{update}},
+    {{selectAll}},
+    {{searchByColumn}},
+    {{deleteByColumn}}
+}

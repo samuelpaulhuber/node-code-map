@@ -1,4 +1,5 @@
 const {routeCommand} = require('./src/main')
+
 const argv = require('yargs') // eslint-disable-line
     .command('create', 'generate data access files', {
         alias: 'c',

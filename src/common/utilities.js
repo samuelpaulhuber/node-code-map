@@ -1,4 +1,4 @@
-module.exports = {
+var self = module.exports = {
     getConnectionData: (args) => {
         var conData = {};
 
@@ -8,10 +8,11 @@ module.exports = {
                     console.log(`Error reading file with name "${args.cf}": ${err}`);
                 }
                     
-                conData = splitConnectionInfo(info);
+                conData = self.splitConnectionInfo(info);
             });
         } else if (args.cs) {
-            conData = splitConnectionInfo(args.cs);
+            console.log(args.cs);
+            conData = self.splitConnectionInfo(args.cs);
         } else if (args.t) {
             conData = {
                 server: 'localhost',
@@ -32,13 +33,13 @@ module.exports = {
     
         var connectionDetails = {
             server: null,
-            username: null,
+            user: null,
             password: null
         };
     
         var conStrArr = conString.split(';');
-        conStrArr.forEach(element => {
-            var elmArr = element.split('=');
+        for(var i = 0; i < conStrArr.length; i++) {
+            var elmArr = conStrArr[i].split('=');
     
             if (elmArr.length !== 2)
                 return;
@@ -47,8 +48,8 @@ module.exports = {
                 case "server":
                     connectionDetails.server = elmArr[1];
                     break;
-                case "username":
-                    connectionDetails.username = elmArr[1];
+                case "user":
+                    connectionDetails.user = elmArr[1];
                     break;
                 case "password":
                     connectionDetails.password = elmArr[1];
@@ -57,6 +58,8 @@ module.exports = {
                     connectionDetails.database = elmArr[1];
                     break;
             }
-        });
+        }
+
+        return connectionDetails;
     }
 }

@@ -1,5 +1,7 @@
-module.exports = () => {
+var {generateFileTables} = require('./create-mapping/mysql/main')
+module.exports = {
     routeCommand: (argv) => {
+        var cmd = '';
         if (argv.create || argv.c) {
             cmd = 'c';
         }
@@ -10,7 +12,8 @@ module.exports = () => {
                     if(argv.mongoose)
                         require('./create-mapping/mongoose/main')(argv);
                     else if(argv.mysql)
-                        require('./create-mapping/mysql/main')(argv);
+                        console.log('this is mysql');
+                        generateFileTables(argv);
                     break;
                 }
             default:

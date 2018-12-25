@@ -12,7 +12,8 @@ module.exports = {
     getDbSchema: (conInfo) => {
         var con = mysql.createConnection({
             host: conInfo.server,
-            user: conInfo.username
+            user: conInfo.user,
+            password: conInfo.password || ''
         });
 
         var sql = `SELECT table_name, column_name, column_default, is_nullable, data_type, character_maximum_length, column_key, numeric_scale
