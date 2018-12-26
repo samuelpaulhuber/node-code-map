@@ -2,6 +2,7 @@ var { getConnectionData } = require('../../common/utilities');
 var { getDbSchema } = require('../../common/dbconnection/mysql');
 var fs = require('fs');
 var api = require('../../create-api/create-api-main');
+const handlebars = require('handlebars');
 
 module.exports = {
     generateFileTables: (args) => {
@@ -10,16 +11,16 @@ module.exports = {
         getDbSchema(conData).then((data) => {
             generateTable(folder, data, conData);
 
-            if(args.api) {
+            if (args.api) {
                 generateApi(data);
             }
         });
     }
 };
 
-function generateApi (data){
+function generateApi(data) {
     var tables = new Array();
-    for(var key in data) {
+    for (var key in data) {
         var table = data[key];
         tables.push(table[0].table_name.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); }));
     }
@@ -32,7 +33,7 @@ function generateTable(folder, data, conData) {
         fs.mkdirSync(folder);
 
     var tables = new Array();
-    
+
     for (var key in data) {
         var table = data[key];
         var columns = new Array();
@@ -41,7 +42,7 @@ function generateTable(folder, data, conData) {
         });
 
         var tableName = table[0].table_name.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
-        
+
         fs.readFile('./src/create-mapping/mysql/resources/crud.txt', "utf8", (err, mainData) => {
             if (err) {
                 console.log(`Could not read main resource file. Error: ${err}`);
@@ -124,15 +125,19 @@ function generateSearchByColumn(tableName) {
 
 function generateSelect(tableName) {
     return new Promise((resolve, reject) => {
-        fs.readFile('src/create-mapping/mysql/resources/selectAll.txt', (err, selectAllFcn) => {
+        fs.readFile('src/create-mapping/mysql/resources/selectAll.hbs', 'utf8', (err, selectAllFcn) => {
             if (err) {
                 console.log(err);
                 reject(err);
             }
 
-            console.log('SELECT ALL', selectAllFcn.toString())
+            const data = {
+                table: tableName
+            };
+            const template = handlebars.compile(selectAllFcn.toString(), { strict: true });
+            const result = template(data);
 
-            resolve(selectAllFcn.toString().replace('{{table}}', tableName));
+            resolve(result);
         });
     });
 }
