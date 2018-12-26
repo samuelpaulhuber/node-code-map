@@ -1,0 +1,4 @@
+insertIntoSimple: (values) => { 
+		let sql = ' INSERT INTO {{table}} ({{columns}}) VALUES ('+values.join(',')+')';
+		return con.query(sql);
+	}

@@ -1,11 +1,12 @@
-var myql = require("mysql");
-var con = mysql.createConnection({
+var mysql = require("promise-mysql");
+var con = mysql.createPool({
     host: "{{server}}",
-    username: "{{user}}",
-    password: "{{password}}"
+    user: "{{user}}",
+    password: "{{password}}",
+    database: "{{database}}"
 });
 
-modules.exports = {
+module.exports = {
     {{insert}},
     {{update}},
     {{selectAll}},

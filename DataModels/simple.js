@@ -1,71 +1,34 @@
-var myql = require("mysql");
-var con = mysql.createConnection({
+var mysql = require("promise-mysql");
+var con = mysql.createPool({
     host: "localhost",
-    username: "root",
-    password: ""
+    user: "root",
+    password: "",
+    database: "test"
 });
 
-modules.exports = {
+module.exports = {
     insertIntoSimple: (values) => { 
-		let sql = ' INSERT INTO Simple (test) VALUES ('+values.join(',')+')';
-		con.connect(function(err) {
-			if(err) throw err;
-
-			console.log("Connected!");
-			con.query(sql, function (err, result) {
-				if(err)throw err;
-				console.log("Result: " + result);
-			});
-		});
+		let sql = ' INSERT INTO Simple (Id,test) VALUES ('+values.join(',')+')';
+		return con.query(sql);
 	},
     updateSimple: (data) => {
 		let sql = ' UPDATE Simple SET '+
-		'test= '+"'"+data.test+"'"+
-		' WHERE Id = ' + data.Id;
-		con.connect(function(err) {
-			if(err) throw err;
+        'test= '+"'"+data.test+"'"+
 
-			console.log("Connected!");
-			con.query(sql, function (err, result) {
-				if(err)throw err;
-				console.log("Result: " + result);
-			});
-		});
+		'WHERE Id = ' + data.Id
+        return con.query(sql);
 	},
     selectAllSimple: () => {
-		let sql = 'SELECT * FROM Simple';
-		con.connect(function(err) {
-			if(err) throw err;
+        let sql = 'SELECT * FROM Simple';
+        return con.query(sql);
+    },
+    selectByColumnSimple: (data) => {
+		let sql = 'SELECT * FROM Simple WHERE '+data.column+' = ' + data.value;
 
-			console.log("Connected!");
-			con.query(sql, function (err, result) {
-				if(err)throw err;
-				console.log("Result: " + result);
-			});
-		});
+        return con.query(sql);
 	},
-    selectByColumnSimple: (column, value) => {
-		let sql = 'SELECT * FROM Simple WHERE '+column+' = ' + value;
-		con.connect(function(err) {
-			if(err) throw err;
-
-			console.log("Connected!");
-			con.query(sql, function (err, result) {
-				if(err)throw err;
-				console.log("Result: " + result);
-			});
-		});
-	},
-    deleteByColumnValueSimple: (key, value) => {
-		let sql = 'DELETE FROM Simple WHERE '+key+'='+value;
-		con.connect(function(err) {
-			if(err) throw err;
-
-			console.log("Connected!");
-			con.query(sql, function (err, result) {
-				if(err)throw err;
-				console.log("Result: " + result);
-			});
-		});
+    deleteByColumnValueSimple: (data) => {
+		let sql = 'DELETE FROM Simple WHERE '+data.column+'='+data.value;
+		return con.query(sql);
 	}
 }

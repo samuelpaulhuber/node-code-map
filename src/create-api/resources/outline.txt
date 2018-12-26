@@ -1,0 +1,14 @@
+const express = require('express')
+const app = express()
+var bodyParser = require('body-parser')
+{{requires}}
+const port = {{port}}
+
+app.use( bodyParser.json() );       // to support JSON-encoded bodies
+app.use(bodyParser.urlencoded({     // to support URL-encoded bodies
+  extended: true
+})); 
+
+{{routes}}
+
+app.listen(port, () => console.log(`App is listening on port ${port}!`));

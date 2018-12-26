@@ -1,183 +1,202 @@
 var { getConnectionData } = require('../../common/utilities');
 var { getDbSchema } = require('../../common/dbconnection/mysql');
 var fs = require('fs');
-var handlebars = require('handlebars');
+var api = require('../../create-api/create-api-main');
 
 module.exports = {
     generateFileTables: (args) => {
-        console.log('generateFileTables');
         var folder = 'DataModels';
         var conData = getConnectionData(args);
-        var data = getDbSchema(conData).then((data) => {
-            generateInsertFile(folder, data, conData);
+        getDbSchema(conData).then((data) => {
+            generateTable(folder, data, conData);
+
+            if(args.api) {
+                generateApi(data);
+            }
         });
     }
 };
 
-function generateInsertFile(folder, data, conData) {
-    console.log('generateInsertFile');
+function generateApi (data){
+    var tables = new Array();
+    for(var key in data) {
+        var table = data[key];
+        tables.push(table[0].table_name.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); }));
+    }
+
+    api.generateApi(tables);
+}
+
+function generateTable(folder, data, conData) {
     if (!fs.existsSync(folder))
         fs.mkdirSync(folder);
 
-    console.log('Data', data);
+    var tables = new Array();
+    
     for (var key in data) {
         var table = data[key];
         var columns = new Array();
         table.map((elm) => {
-            if (!elm.column_key)
-                columns.push(elm.column_name);
+            columns.push(elm.column_name);
         });
 
         var tableName = table[0].table_name.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
-
-        //fs.readFile("test.txt", "utf8", function(err, data) {...});
-        var main = fs.readFile('./src/create-mapping/mysql/resources/crud.txt', "utf8", (err, mainData) => {
+        
+        fs.readFile('./src/create-mapping/mysql/resources/crud.txt', "utf8", (err, mainData) => {
             if (err) {
                 console.log(`Could not read main resource file. Error: ${err}`);
                 return;
             }
 
-            // var test = handlebars.precompile(mainData, {noEscape: true});
-            // var mainTemplate = handlebars.compile(test);
-
             var templateData = {
                 server: conData.server,
                 user: conData.user,
                 password: conData.password,
-                insert: generateInsert(columns, tableName),
-                update: generateUpdate(table, tableName),
-                selectAll: generateSelect(tableName),
-                searchByColumn: generateSearchByColumn(tableName),
-                deleteByColumn: generateDeleteByColumn(tableName)
+                database: conData.database
             };
+            var prom = new Array();
 
-            for (var v in templateData) {
-                console.log(v);
-                console.log(templateData[v]);
-                mainData = mainData.replace(`{{${v}}}`, templateData[v]);
-            }
+            prom.push(generateDeleteByColumn(tableName).then((statement) => {
+                templateData.deleteByColumn = statement;
+            }));
 
-            console.log(mainData);
+            prom.push(generateSearchByColumn(tableName).then((statement) => {
+                templateData.searchByColumn = statement;
+            }));
 
-            fs.writeFile(`${folder}/${table[0].table_name}.js`, mainData, (err) => {
-                if (err)
-                    console.log(error);
+            prom.push(generateSelect(tableName).then((statement) => {
+                templateData.selectAll = statement;
+            }));
+
+            prom.push(generateInsert(columns, tableName).then((statement) => {
+                templateData.insert = statement;
+            }));
+
+            prom.push(generateUpdate(table, tableName).then(statement => {
+                templateData.update = statement;
+            }));
+
+            Promise.all(prom).then(() => {
+                for (var v in templateData) {
+                    mainData = mainData.replace(`{{${v}}}`, templateData[v]);
+                }
+
+                fs.writeFile(`${folder}/${table[0].table_name}.js`, mainData, (err) => {
+                    if (err) {
+                        console.log(error);
+                        return;
+                    }
+                });
             });
         });
     }
 }
 
 function generateInsert(columns, tableName) {
-    return 'insertInto' + tableName + ': (values) => { \n' +
-        '\t\tlet sql = \' INSERT INTO ' + tableName + ' (' + columns.join(',') + ') VALUES (\'+values.join(\',\')+\')\';\n' +
-        '\t\tcon.connect(function(err) {\n' +
-        '\t\t\tif(err) throw err;\n\n' +
-        '\t\t\tconsole.log("Connected!");\n' +
-        '\t\t\tcon.query(sql, function (err, result) {\n' +
-        '\t\t\t\tif(err)throw err;\n' +
-        '\t\t\t\tconsole.log("Result: " + result);\n' +
-        '\t\t\t});\n' +
-        '\t\t});\n' +
-        '\t}';
+    return new Promise((resolve, reject) => {
+        fs.readFile('src/create-mapping/mysql/resources/insert.txt', (err, insertFcn) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            }
+
+            console.log('INSERT', insertFcn.toString())
+
+            resolve(insertFcn.toString().replace('{{table}}', tableName).replace('{{columns}}', columns.join(',')));
+        });
+    });
 }
 
 function generateSearchByColumn(tableName) {
-    var returnValue = '\selectByColumn' + tableName + ': (column, value) => {\n' +
-        '\t\tlet sql = \'SELECT * FROM ' + tableName + ' WHERE \'+column+\' = \' + value;\n';
-    returnValue += '\t\tcon.connect(function(err) {\n' +
-        '\t\t\tif(err) throw err;\n\n' +
-        '\t\t\tconsole.log("Connected!");\n' +
-        '\t\t\tcon.query(sql, function (err, result) {\n' +
-        '\t\t\t\tif(err)throw err;\n' +
-        '\t\t\t\tconsole.log("Result: " + result);\n' +
-        '\t\t\t});\n' +
-        '\t\t});\n' +
-        '\t}';
+    return new Promise((resolve, reject) => {
+        fs.readFile('src/create-mapping/mysql/resources/selectByColumn.txt', (err, selectByFcn) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            }
 
-    return returnValue;
+            console.log('SEARCH BY COLUMN', selectByFcn.toString())
+
+            resolve(selectByFcn.toString().replace('{{table}}', tableName));
+        });
+    });
 }
 
 function generateSelect(tableName) {
-    var returnValue = '\selectAll' + tableName + ': () => {\n' +
-        '\t\tlet sql = \'SELECT * FROM ' + tableName + '\';\n';
-    returnValue += '\t\tcon.connect(function(err) {\n' +
-        '\t\t\tif(err) throw err;\n\n' +
-        '\t\t\tconsole.log("Connected!");\n' +
-        '\t\t\tcon.query(sql, function (err, result) {\n' +
-        '\t\t\t\tif(err)throw err;\n' +
-        '\t\t\t\tconsole.log("Result: " + result);\n' +
-        '\t\t\t});\n' +
-        '\t\t});\n' +
-        '\t}';
+    return new Promise((resolve, reject) => {
+        fs.readFile('src/create-mapping/mysql/resources/selectAll.txt', (err, selectAllFcn) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            }
 
-    return returnValue;
+            console.log('SELECT ALL', selectAllFcn.toString())
+
+            resolve(selectAllFcn.toString().replace('{{table}}', tableName));
+        });
+    });
 }
 
 function generateDeleteByColumn(tableName) {
-    var returnValue = 'deleteByColumnValue' + tableName + ': (key, value) => {\n' +
-        '\t\tlet sql = \'DELETE FROM ' + tableName + ' WHERE \'+key+\'=\'+value;\n';
-    returnValue += '\t\tcon.connect(function(err) {\n' +
-        '\t\t\tif(err) throw err;\n\n' +
-        '\t\t\tconsole.log("Connected!");\n' +
-        '\t\t\tcon.query(sql, function (err, result) {\n' +
-        '\t\t\t\tif(err)throw err;\n' +
-        '\t\t\t\tconsole.log("Result: " + result);\n' +
-        '\t\t\t});\n' +
-        '\t\t});\n' +
-        '\t}';
+    return new Promise((resolve, reject) => {
+        fs.readFile('src/create-mapping/mysql/resources/deleteByColumn.txt', (err, deleteFcn) => {
+            if (err) {
+                console.log(err);
+                reject(err);
+            }
 
-    return returnValue;
+            console.log('DELETE', deleteFcn.toString())
+
+            resolve(deleteFcn.toString().replace('{{table}}', tableName));
+        });
+    });
 }
 
 function generateUpdate(columns, tableName) {
-    var primaryKeyCol = null;
-    var returnValue = 'update' + tableName + ': (data) => {\n' +
-        '\t\tlet sql = \' UPDATE ' + tableName + ' SET \'+\n';
+    return new Promise((resolve, reject) => {
+        fs.readFile('src/create-mapping/mysql/resources/update.txt', (err, updateFcn) => {
+            var primaryKeyCol = null;
+            var setColumns = '';
+            if (err) {
+                console.log(err);
+                reject(err);
+            }
+
+            console.log('UDPATE', updateFcn.toString())
+            console.log('Update Columns:', columns);
+            for (var i = 0; i < columns.length; i++) {
+                var column = columns[i];
+                var pair = `'${column.column_name}= \'`;
+
+                if (column.column_key === 'PRI') {
+                    primaryKeyCol = column;
+                    continue;
+                }
 
 
-    for (var i = 0; i < columns.length; i++) {
-        var column = columns[i];
-        var pair = `\t\t\'${column.column_name}= \'`;
+                if (column.numeric_scale === null)
+                    pair += `+"\'"+data.${column.column_name}+"\'"`;
+                else
+                    pair += `+data.${column.column_name}`;
 
-        if (column.column_key === 'PRI') {
-            primaryKeyCol = column;
-            continue;
-        }
+                if (i !== columns.length - 1)
+                    pair += '+\',\'+';
+                else
+                    pair += '+';
+
+                setColumns += pair + '\n';
+            }
 
 
-        if (column.numeric_scale === null)
-            pair += `+"\'"+data.${column.column_name}+"\'"`;
-        else
-            pair += `+data.${column.column_name}`;
+            var where = `'WHERE ${primaryKeyCol.column_name} = ' `;
 
-        if (i !== columns.length - 1)
-            pair += '+\',\'+';
-        else
-            pair += '+';
+            if (primaryKeyCol.numeric_scale === null)
+                where += '\'' + `data.${primaryKeyCol.column_name} \'`
+            else
+                where += `+ data.${primaryKeyCol.column_name}`
 
-        returnValue += pair + '\n';
-    }
-
-    returnValue += `\t\t\' WHERE ${primaryKeyCol.column_name} = `;
-    if (primaryKeyCol.numeric_scale === null)
-        returnValue += '\'';
-
-    returnValue += '\' + ' + `data.${primaryKeyCol.column_name}`;
-
-    if (primaryKeyCol.numeric_scale === null)
-        returnValue += '\'';
-
-    returnValue += ';\n';
-
-    returnValue += '\t\tcon.connect(function(err) {\n' +
-        '\t\t\tif(err) throw err;\n\n' +
-        '\t\t\tconsole.log("Connected!");\n' +
-        '\t\t\tcon.query(sql, function (err, result) {\n' +
-        '\t\t\t\tif(err)throw err;\n' +
-        '\t\t\t\tconsole.log("Result: " + result);\n' +
-        '\t\t\t});\n' +
-        '\t\t});\n' +
-        '\t}';
-
-    return returnValue;
+            resolve(updateFcn.toString().replace('{{table}}', tableName).replace('{{columns}}', setColumns)
+                .replace('{{where}}', where));
+        });
+    });
 }

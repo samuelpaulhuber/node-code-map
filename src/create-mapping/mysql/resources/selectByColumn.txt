@@ -1,0 +1,5 @@
+selectByColumnSimple: (data) => {
+		let sql = 'SELECT * FROM {{table}} WHERE '+data.column+' = ' + data.value;
+
+        return con.query(sql);
+	}

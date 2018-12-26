@@ -1,0 +1,4 @@
+deleteByColumnValueSimple: (data) => {
+		let sql = 'DELETE FROM {{table}} WHERE '+data.column+'='+data.value;
+		return con.query(sql);
+	}

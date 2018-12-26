@@ -1,0 +1,30 @@
+app.get('/{{table}}/selectAll', (req, res) => { 
+    {{table}}.selectAllSimple().then((data) => {
+        res.send(data);   
+    });    
+});
+
+app.post('/{{table}}/updateSimple', (req, res) => { 
+    {{table}}.updateSimple(req.body).then((data) => {
+        res.send(data);
+    });
+});
+
+app.post('/{{table}}/insertIntoSimple', (req, res) => { 
+    {{table}}.insertIntoSimple(req.body).then((data) => {
+        res.send(data);   
+    });
+});
+
+app.post('/{{table}}/selectByColumnSimple', (req, res) => { 
+    {{table}}.selectByColumnSimple(req.body).then((data) => {
+        res.send(data);
+    });    
+});
+
+app.post('/{{table}}/deleteByColumnValueSimple', (req, res) => { 
+    {{table}}.deleteByColumnValueSimple(req.body).then((data) => {
+        res.send();
+    });
+});
+
