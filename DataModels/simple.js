@@ -14,8 +14,7 @@ module.exports = {
     updateSimple: (data) => {
 		let sql = ' UPDATE Simple SET '+
         'test= '+"'"+data.test+"'"+
-
-		'WHERE Id = ' + data.Id
+		'WHERE Id = ' + data.Id;
         return con.query(sql);
 	},
     selectAllSimple: () => {

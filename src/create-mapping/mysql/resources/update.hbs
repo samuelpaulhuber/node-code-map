@@ -1,6 +1,5 @@
 updateSimple: (data) => {
 		let sql = ' UPDATE {{table}} SET '+
-        {{columns}}
-		{{where}}
+        {{{columns}}}		{{{where}}};
         return con.query(sql);
 	}

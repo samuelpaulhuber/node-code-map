@@ -43,7 +43,7 @@ function generateTable(folder, data, conData) {
 
         var tableName = table[0].table_name.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
 
-        fs.readFile('./src/create-mapping/mysql/resources/crud.txt', "utf8", (err, mainData) => {
+        fs.readFile('./src/create-mapping/mysql/resources/crud.hbs', "utf8", (err, mainData) => {
             if (err) {
                 console.log(`Could not read main resource file. Error: ${err}`);
                 return;
@@ -82,7 +82,10 @@ function generateTable(folder, data, conData) {
                     mainData = mainData.replace(`{{${v}}}`, templateData[v]);
                 }
 
-                fs.writeFile(`${folder}/${table[0].table_name}.js`, mainData, (err) => {
+                const template = handlebars.compile(mainData.toString(), { strict: true });
+                const result = template(templateData);
+
+                fs.writeFile(`${folder}/${table[0].table_name}.js`, result, (err) => {
                     if (err) {
                         console.log(error);
                         return;
@@ -95,30 +98,39 @@ function generateTable(folder, data, conData) {
 
 function generateInsert(columns, tableName) {
     return new Promise((resolve, reject) => {
-        fs.readFile('src/create-mapping/mysql/resources/insert.txt', (err, insertFcn) => {
+        fs.readFile('src/create-mapping/mysql/resources/insert.hbs', (err, insertFcn) => {
             if (err) {
                 console.log(err);
                 reject(err);
             }
 
-            console.log('INSERT', insertFcn.toString())
+            const data = {
+                table: tableName,
+                columns: columns.join(',')
+            };
+            const template = handlebars.compile(insertFcn.toString(), { strict: true });
+            const result = template(data);
 
-            resolve(insertFcn.toString().replace('{{table}}', tableName).replace('{{columns}}', columns.join(',')));
+            resolve(result);
         });
     });
 }
 
 function generateSearchByColumn(tableName) {
     return new Promise((resolve, reject) => {
-        fs.readFile('src/create-mapping/mysql/resources/selectByColumn.txt', (err, selectByFcn) => {
+        fs.readFile('src/create-mapping/mysql/resources/selectByColumn.hbs', (err, selectByFcn) => {
             if (err) {
                 console.log(err);
                 reject(err);
             }
 
-            console.log('SEARCH BY COLUMN', selectByFcn.toString())
+            const data = {
+                table: tableName
+            };
+            const template = handlebars.compile(selectByFcn.toString(), { strict: true });
+            const result = template(data);
 
-            resolve(selectByFcn.toString().replace('{{table}}', tableName));
+            resolve(result);
         });
     });
 }
@@ -144,22 +156,26 @@ function generateSelect(tableName) {
 
 function generateDeleteByColumn(tableName) {
     return new Promise((resolve, reject) => {
-        fs.readFile('src/create-mapping/mysql/resources/deleteByColumn.txt', (err, deleteFcn) => {
+        fs.readFile('src/create-mapping/mysql/resources/deleteByColumn.hbs', (err, deleteFcn) => {
             if (err) {
                 console.log(err);
                 reject(err);
             }
 
-            console.log('DELETE', deleteFcn.toString())
+            const data = {
+                table: tableName
+            };
+            const template = handlebars.compile(deleteFcn.toString(), { strict: true });
+            const result = template(data);
 
-            resolve(deleteFcn.toString().replace('{{table}}', tableName));
+            resolve(result);
         });
     });
 }
 
 function generateUpdate(columns, tableName) {
     return new Promise((resolve, reject) => {
-        fs.readFile('src/create-mapping/mysql/resources/update.txt', (err, updateFcn) => {
+        fs.readFile('src/create-mapping/mysql/resources/update.hbs', (err, updateFcn) => {
             var primaryKeyCol = null;
             var setColumns = '';
             if (err) {
@@ -167,8 +183,6 @@ function generateUpdate(columns, tableName) {
                 reject(err);
             }
 
-            console.log('UDPATE', updateFcn.toString())
-            console.log('Update Columns:', columns);
             for (var i = 0; i < columns.length; i++) {
                 var column = columns[i];
                 var pair = `'${column.column_name}= \'`;
@@ -200,8 +214,15 @@ function generateUpdate(columns, tableName) {
             else
                 where += `+ data.${primaryKeyCol.column_name}`
 
-            resolve(updateFcn.toString().replace('{{table}}', tableName).replace('{{columns}}', setColumns)
-                .replace('{{where}}', where));
+            const data = {
+                table: tableName,
+                columns: setColumns,
+                where: where
+            };
+            const template = handlebars.compile(updateFcn.toString(), { strict: true });
+            const result = template(data);
+
+            resolve(result);
         });
     });
 }

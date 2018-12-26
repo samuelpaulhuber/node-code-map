@@ -1,4 +1,0 @@
-selectAllSimple: () => {
-        let sql = 'SELECT * FROM {{table}}';
-        return con.query(sql);
-    }
